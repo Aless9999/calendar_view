@@ -38,7 +38,7 @@ class CalendarViewActivity : AppCompatActivity() {
             binding.root,
         ) { _, windowInsets ->
             val insets = windowInsets.getInsets(systemBars())
-            binding.activityAppBar.updatePadding(top = insets.top)
+
             binding.examplesRecyclerview.updatePadding(
                 left = insets.left,
                 right = insets.right,
