@@ -11,6 +11,7 @@ activity = "1.8.0"
 constraintlayout = "2.2.1"
 cardview = "1.0.0"
 calendarView = "2.5.4"  # версия для com.kizitonwose.calendar:view
+gson = "2.10.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -23,6 +24,7 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 calendarView = { group = "com.kizitonwose.calendar", name = "view", version.ref = "calendarView" }  # зависимость для calendar:view
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

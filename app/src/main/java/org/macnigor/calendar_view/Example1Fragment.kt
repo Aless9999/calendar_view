@@ -2,10 +2,13 @@ package org.macnigor.calendar_view
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CompoundButton
+import android.widget.EditText
 import android.widget.TextView
 import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
@@ -22,6 +25,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 class Example1Fragment : Fragment(R.layout.example_1_fragment) {
+    private lateinit var noteStorage: NoteStorage
 
     private lateinit var binding: Example1FragmentBinding
     private val selectedDates = mutableSetOf<LocalDate>()
@@ -30,10 +34,17 @@ class Example1Fragment : Fragment(R.layout.example_1_fragment) {
     private val monthCalendarView get() = binding.exOneCalendar
     private val weekCalendarView get() = binding.exOneWeekCalendar
 
+    private val notesMap = mutableMapOf<LocalDate, String>()
+
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = Example1FragmentBinding.bind(view)
         applyInsets(binding)
+
+        noteStorage = NoteStorage(requireContext())
+        notesMap.putAll(noteStorage.loadNotes())
+
 
         val daysOfWeek = daysOfWeek()
 
@@ -113,10 +124,15 @@ class Example1Fragment : Fragment(R.layout.example_1_fragment) {
 
     private fun bindDate(date: LocalDate, textView: TextView, isSelectable: Boolean) {
         textView.text = date.dayOfMonth.toString()
+
         when {
             !isSelectable -> {
                 textView.setTextColorRes(R.color.example_1_white_light)
                 textView.background = null
+            }
+            notesMap.containsKey(date) -> { // Заметка есть
+                textView.setTextColorRes(R.color.white)
+                textView.setBackgroundResource(R.drawable.example_1_note_bg) // добавим новый фон
             }
             selectedDates.contains(date) -> {
                 textView.setTextColorRes(R.color.example_1_bg)
@@ -131,13 +147,72 @@ class Example1Fragment : Fragment(R.layout.example_1_fragment) {
                 textView.background = null
             }
         }
+
     }
 
+
     private fun dateClicked(date: LocalDate) {
-        if (!selectedDates.add(date)) selectedDates.remove(date)
-        monthCalendarView.notifyDateChanged(date)
-        weekCalendarView.notifyDateChanged(date)
+        val context = requireContext()
+        val existingNote = notesMap[date]
+
+        if (existingNote != null) {
+            // Есть заметка – покажем выбор
+            AlertDialog.Builder(context)
+                .setTitle("Заметка на $date")
+                .setMessage(existingNote)
+                .setPositiveButton("Изменить") { _, _ ->
+                    showNoteDialog(date, existingNote)
+                }
+                .setNegativeButton("Удалить") { _, _ ->
+                    notesMap.remove(date)
+                    selectedDates.remove(date)
+                    monthCalendarView.notifyCalendarChanged()
+                    weekCalendarView.notifyCalendarChanged()
+                    noteStorage.saveNotes(notesMap)
+
+                }
+                .setNeutralButton("Закрыть", null)
+                .show()
+        } else {
+            // Нет заметки – откроем диалог ввода
+            showNoteDialog(date)
+        }
     }
+
+    private fun showNoteDialog(date: LocalDate, prefill: String = "") {
+        val context = requireContext()
+
+        val editText = EditText(context).apply {
+            setText(prefill)
+            hint = "Введите заметку"
+        }
+
+        AlertDialog.Builder(context)
+            .setTitle("Заметка на $date")
+            .setView(editText)
+            .setPositiveButton("Сохранить") { _, _ ->
+                val note = editText.text.toString()
+                if (note.isNotBlank()) {
+                    notesMap[date] = note
+                    selectedDates.add(date)
+                } else {
+                    notesMap.remove(date)
+                    selectedDates.remove(date)
+                }
+                monthCalendarView.notifyCalendarChanged()
+                weekCalendarView.notifyCalendarChanged()
+
+                noteStorage.saveNotes(notesMap)// сохраняем в базе
+
+
+
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
+    }
+
+
+
 
     @SuppressLint("SetTextI18n")
     private fun updateTitle() {
